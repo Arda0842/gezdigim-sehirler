@@ -19,9 +19,11 @@
     --muted: #7880a8;
     --accent: #e07a45;
     --stroke: #0a0d18;
+    --plexus-color: 76, 209, 255; /* #4cd1ff */
+    --plexus-opacity: 0.15;
   }
 
-  /* --- LIGHT MODE RENKLERİ EKLENDİ --- */
+  /* --- LIGHT MODE RENKLERİ --- */
   body.light-mode {
     --bg: #f4f6f9;
     --card: #ffffff;
@@ -34,19 +36,16 @@
     --muted: #6b7280;
     --accent: #e07a45;
     --stroke: #ffffff;
-    background-image: 
-      radial-gradient(ellipse at 15% 10%, #ffffff 0%, transparent 55%),
-      radial-gradient(ellipse at 85% 90%, #eef1f5 0%, transparent 55%);
+    --plexus-color: 100, 100, 100;
+    --plexus-opacity: 0.1;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
     background:var(--bg); color:var(--text);
     font-family:'Nunito',sans-serif; min-height:100vh;
-    background-image:
-      radial-gradient(ellipse at 15% 10%,#1a2044 0%,transparent 55%),
-      radial-gradient(ellipse at 85% 90%,#1a1530 0%,transparent 55%);
-    transition: color 0.3s;
+    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
   }
   header { text-align:center; padding:36px 24px 12px; position: relative; z-index: 2; }
   header h1 {
@@ -81,8 +80,18 @@
   .prog-lbl { text-align:right; font-size:.67rem; color:var(--muted); margin-top:3px; }
 
   .map-wrap { padding:10px 10px 2px; max-width:1120px; margin:0 auto; position: relative; z-index: 2; }
-  #map { width:100%; height:auto; filter:drop-shadow(0 6px 32px rgba(0,0,0,0.5)); transition: filter 0.3s; }
+  #map { width:100%; height:auto; filter:drop-shadow(0 6px 32px rgba(0,0,0,0.5)); transition: filter 0.3s; position: relative; z-index: 2; }
   body.light-mode #map { filter:drop-shadow(0 6px 20px rgba(0,0,0,0.1)); }
+
+  /* DİNAMİK ARKA PLAN KANVASI */
+  #plexus-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
 
   .p {
     fill:var(--idle); stroke:var(--stroke); stroke-width:.5;
@@ -187,6 +196,8 @@
 </head>
 <body>
 
+<canvas id="plexus-bg"></canvas>
+
 <div id="ripple-layer"></div>
 <div class="theme-switch-wrapper" id="themeWrapper">
   <label class="theme-switch" for="checkbox">
@@ -217,165 +228,261 @@
 <div class="map-wrap">
 <svg id="map" viewBox="0 0 1000 422" xmlns="http://www.w3.org/2000/svg">
 <g id="prov">
-<path class="p" data-city="Ardahan" d="M889.7 82.2l-3.1 1.1-4.8 2.7-7.7 3.3-7.8 3.3-5.7 3-1.1 4.8-0.7 7.5-0.9 4.5-5.7 0.6-5.5 1.1-1.4-2.6-1.9-1.9-1.4-2.1-1-2.4-1.3-1.7-1.8-1.2-2.4-3.7-1-4.9 3-5.9 4.1-4.6 4-2 1.2-4.2-1.3-4.4-0.9-2.3-0.4-0.7-0.5-1.5-0.3-2.7-0.7-3.6 0.5 0 1-0.7 1.4-2.2 1.1-1 0.5-1.1 0.4-2.6 0.5-1 0.9-0.8 0.1 0 0.2 0 0.9-0.4 2.4-0.2 6.7 0.6 0.9 0.4-0.4 0.6-0.1 0.7-0.1 0.6-0.2 0.6-0.4 0.4-1 0.8-0.4 0.7 1.3 0.7 0.9 1 0.9 0.3 1.1-1.4 0.7-0.4 0.3 0.4 0.3 0.8 0.4 0.7 0.3 0.3 1.4 0.4 0.3 0.3 0.2 0.3 0.2 0.2 0.5 0.2 0.3 0.4 1.4 2.7 0.7 0.8 3.5 2.4 2.3 2 1.5 0.7 1.4 0.2 0 0.3-0.6 0.9-0.7 0.6-2.6 1.3 1.3 0.4 1.1-0.1 0.9 0.1 1 1.1 1.1 2.8 0.7 0.5 4.4-1.2 1.3-0.1 1.5 0.4 1.3 0.8 1.3 1.2 0.7 1.5-0.5 1.6z"/>
-<path class="p" data-city="Artvin" d="M842.7 61.7l0.7 3.6 0.3 2.7 0.5 1.5 0.4 0.7 0.9 2.3 1.3 4.4-1.2 4.2-4 2-4.1 4.6-3 5.9-2.8 0.3-2.8 0.6-3.3-0.3-3.2 0.3-1.6 0.8-1.5 1.3-0.6 2.5 0.3 2.7-1.2 2.5-1.9 1.9-0.9 2.5-0.1 2.8-2.2 3.3-4-2.3-3.8-1.1-3.7 1.1-4 2.6-4.4 1.7-3.2-2.9 0.6-5.3 1.3-2.2-0.4-2.1-1.7-0.6-5.9-0.9-3.7-2.1 0.7-2.5 4.5-5.3 1.1-0.6 1-0.9 0.4-1.3 0.7-1.3 2.6-1.7 1.3-2.9-1.4-1.6-1.9-0.9-0.5-1.1-0.6-1.1-0.9-0.6-0.9-0.9-0.9-2.1-0.4-2.5-1.3-3.3-0.1-0.2 4.1-3.3 1.2-0.4 1-0.6 0.5-0.2 1.7-0.2 0.6-0.2 0.9-0.7 0.7-1.1 0.5-1.4 0.2-1.4 0.5-0.3 2.7-2.5 0.7-1.2 5 2.2 0.7 0.1 1.4-0.1 1.2-0.6 0.3 0 0.1 0.3-0.1 0.5 0 0.5 0.2 0.4 0.6 0.2 1.4 0.2 0.6 0.2 1.9 1.7 0.6 0.3 0.4-0.3 1.9-1.6 1.5-2.1 0.7-0.5 1.9-0.8 3.4 1.3 1.7-0.5 0.6-0.4 0.7-0.1 0.7 0.1 0.7 0.4 1.4-0.5 0.8 0 0.6 0.5 0.8 0.7 1.2 0.1 2.3-0.1 8.3 3.2 0.7 0z"/>
-</g>
-<g id="lbls" pointer-events="none">
-<text class="mlbl" x="857.2" y="82.5">Ardahan</text>
-<text class="mlbl" x="811.8" y="82.7">Artvin</text>
 </g>
 </svg>
 </div>
 
 <div class="section">
-  <h2>Gezilen Şehirler</h2>
+  <h2><i class="fas fa-map-marker-alt" style="color:var(--accent);"></i> Gezilen İller</h2>
   <div class="chips" id="chips">
-    <span class="empty">Henüz hiç şehir seçilmedi — haritadan bir ile tıkla!</span>
+    <div class="empty">Henüz bir il işaretlemedin.</div>
   </div>
-  <button class="reset" id="rst">🗑 Tümünü Sıfırla</button>
+  <button class="reset" id="reset"><i class="fas fa-undo"></i> Haritayı Sıfırla</button>
 </div>
 
 <div id="tt">
-  <div id="tc"></div>
-  <div class="ts" id="ts"></div>
+  <div id="tt-name"></div>
+  <div id="tt-status" class="ts">Tıkla ve işaretle</div>
 </div>
 
 <script>
-  // --- HARİTA İŞLEMLERİ ---
-  const TOTAL=81, KEY='tr-gezildi-v5';
-  let vis=new Set(JSON.parse(localStorage.getItem(KEY)||'[]'));
-  const tt=document.getElementById('tt'),tc=document.getElementById('tc'),ts=document.getElementById('ts');
-  const chips=document.getElementById('chips');
-  const cntEl=document.getElementById('cnt'),remEl=document.getElementById('rem'),
-        pctEl=document.getElementById('pct'),bar=document.getElementById('bar'),
-        blbl=document.getElementById('blbl');
+  // 81 İlin Tam Listesi
+  const cities = ["Adana","Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ankara","Antalya","Ardahan","Artvin","Aydın","Balıkesir","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Iğdır","Isparta","İstanbul","İzmir","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kayseri","Kilis","Kırıkkale","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Samsun","Şanlıurfa","Siirt","Sinop","Şırnak","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"];
 
-  function save(){ localStorage.setItem(KEY,JSON.stringify([...vis])); }
-  function bumpEl(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  let visited = JSON.parse(localStorage.getItem('visited')) || [];
 
-  function render(){
-    const n=vis.size;
-    cntEl.textContent=n; remEl.textContent=TOTAL-n;
-    pctEl.textContent='%'+Math.round(n/TOTAL*100);
-    bar.style.width=(n/TOTAL*100)+'%';
-    blbl.textContent=n+' / '+TOTAL+' il gezildi';
-    [cntEl,remEl,pctEl].forEach(bumpEl);
-    chips.innerHTML='';
-    if(!vis.size){
-      chips.innerHTML='<span class="empty">Henüz hiç şehir seçilmedi — haritadan bir ile tıkla!</span>';
-      return;
+  const update = () => {
+    // İstatistikleri güncelle
+    document.getElementById('cnt').innerText = visited.length;
+    document.getElementById('cnt').classList.add('bump');
+    setTimeout(()=>document.getElementById('cnt').classList.remove('bump'),300);
+    
+    document.getElementById('rem').innerText = 81 - visited.length;
+    document.getElementById('pct').innerText = `%${Math.round((visited.length / 81) * 100)}`;
+    
+    // İlerleme çubuğunu güncelle
+    document.getElementById('bar').style.width = `${(visited.length / 81) * 100}%`;
+    document.getElementById('blbl').innerText = `${visited.length} / 81 il gezildi`;
+
+    // Çipleri güncelle
+    const chipsDiv = document.getElementById('chips');
+    chipsDiv.innerHTML = '';
+    if(visited.length === 0){
+      chipsDiv.innerHTML = '<div class="empty">Henüz bir il işaretlemedin.</div>';
+    } else {
+      visited.sort().forEach(c => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.innerText = c;
+        chip.onclick = () => toggleVisited(c);
+        chipsDiv.appendChild(chip);
+      });
     }
-    [...vis].sort().forEach(city=>{
-      const c=document.createElement('span');
-      c.className='chip'; c.textContent=city; c.title='Kaldırmak için tıkla';
-      c.onclick=()=>{
-        vis.delete(city); save();
-        document.querySelectorAll('.p').forEach(p=>{ if(p.dataset.city===city) p.classList.remove('v'); });
-        render();
-      };
-      chips.appendChild(c);
-    });
-  }
 
-  document.querySelectorAll('.p').forEach(p=>{
-    const city=p.dataset.city;
-    if(vis.has(city)) p.classList.add('v');
-    p.addEventListener('click',()=>{
-      if(vis.has(city)){ vis.delete(city); p.classList.remove('v'); }
-      else{ vis.add(city); p.classList.add('v'); }
-      save(); render();
+    // Haritayı güncelle
+    document.querySelectorAll('.p').forEach(p => {
+      const city = p.getAttribute('data-city');
+      if(visited.includes(city)){
+        p.classList.add('v');
+      } else {
+        p.classList.remove('v');
+      }
     });
-    p.addEventListener('mousemove',e=>{
-      const v=vis.has(city);
-      tc.textContent=city;
-      ts.textContent=v?'✓ Gezildi':'Tıkla ve işaretle';
-      ts.className='ts'+(v?' v':'');
-      tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY-10)+'px';
-      tt.classList.add('on');
-    });
-    p.addEventListener('mouseleave',()=>tt.classList.remove('on'));
-  });
 
-  document.getElementById('rst').onclick=()=>{
-    if(!confirm('Tüm işaretlemeler silinsin mi?')) return;
-    vis.clear(); save();
-    document.querySelectorAll('.p').forEach(p=>p.classList.remove('v'));
-    render();
+    // Tooltip durumunu güncelle
+    updateTooltipStatus();
   };
 
-  render();
+  const toggleVisited = (city) => {
+    if(visited.includes(city)){
+      visited = visited.filter(c => c !== city);
+    } else {
+      visited.push(city);
+    }
+    localStorage.setItem('visited', JSON.stringify(visited));
+    update();
+  };
 
-  // --- NOKTASAL YAYILMALI TEMA GEÇİŞİ (RIPPLE EFFECT) ---
-  const toggleSwitch = document.querySelector('#checkbox');
-  const themeWrapper = document.getElementById('themeWrapper');
-  const rippleLayer = document.getElementById('ripple-layer');
+  // Haritadaki İllere Tıklama
+  document.querySelectorAll('.p').forEach(p => {
+    p.onclick = () => {
+      toggleVisited(p.getAttribute('data-city'));
+    };
+    
+    // Tooltip
+    p.onmousemove = (e) => {
+      const tt = document.getElementById('tt');
+      const city = p.getAttribute('data-city');
+      document.getElementById('tt-name').innerText = city;
+      updateTooltipStatus(visited.includes(city));
+      tt.style.left = `${e.clientX + 15}px`;
+      tt.style.top = `${e.clientY + 15}px`;
+      tt.classList.add('on');
+    };
+    
+    p.onmouseleave = () => {
+      document.getElementById('tt').classList.remove('on');
+    };
+  });
+
+  const updateTooltipStatus = (isVisited) => {
+    const statusText = document.getElementById('tt-status');
+    if (isVisited) {
+      statusText.innerText = "✓ Gezildi! Tekrar tıkla ile kaldır.";
+      statusText.classList.add('v');
+    } else {
+      statusText.innerText = "Tıkla ve işaretle";
+      statusText.classList.remove('v');
+    }
+  };
+
+  // Sıfırlama Butonu
+  document.getElementById('reset').onclick = () => {
+    visited = [];
+    localStorage.removeItem('visited');
+    update();
+  };
+
+  // Tema Değiştirme ve Efekt
+  const themeSwitch = document.querySelector('#checkbox');
   const body = document.body;
-  let isAnimating = false;
+  const rippleLayer = document.getElementById('ripple-layer');
+  const themeWrapper = document.getElementById('themeWrapper');
 
-  // Temayı localStorage'dan yükle
-  const currentTheme = localStorage.getItem('map-theme');
-  if (currentTheme) {
-      body.classList.add(currentTheme);
-      if (currentTheme === 'light-mode') toggleSwitch.checked = true;
+  const currentTheme = localStorage.getItem('theme') || 'dark';
+  body.className = `${currentTheme}-mode`;
+  themeSwitch.checked = currentTheme === 'light';
+
+  themeSwitch.addEventListener('change', (e) => {
+    const x = e.clientX || themeWrapper.getBoundingClientRect().left + 30;
+    const y = e.clientY || themeWrapper.getBoundingClientRect().top + 17;
+
+    const theme = e.target.checked ? 'light' : 'dark';
+    
+    rippleLayer.style.left = `${x}px`;
+    rippleLayer.style.top = `${y}px`;
+    
+    // Efektin arka plan rengini temaya göre ayarla
+    rippleLayer.style.background = e.target.checked ? '#f4f6f9' : '#0f1117';
+    
+    rippleLayer.style.transition = 'none';
+    rippleLayer.style.transform = 'translate(-50%, -50%) scale(0)';
+    rippleLayer.style.opacity = '1';
+    
+    requestAnimationFrame(() => {
+      rippleLayer.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s 0.2s';
+      rippleLayer.style.transform = 'translate(-50%, -50%) scale(3000)';
+      rippleLayer.style.opacity = '0';
+    });
+
+    setTimeout(() => {
+      body.className = `${theme}-mode`;
+      localStorage.setItem('theme', theme);
+      update(); // Dinamik arka plan rengini güncellemek için
+    }, 300);
+  });
+
+  // --- DİNAMİK ARKA PLAN (PLEXUS EFEKTİ) ---
+  class PlexusEffect {
+    constructor(canvasId) {
+      this.canvas = document.getElementById(canvasId);
+      this.ctx = this.canvas.getContext('2d');
+      this.particles = [];
+      this.numParticles = 70;
+      this.connectionDist = 150;
+      this.mouse = { x: null, y: null, radius: 100 };
+
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+      
+      // Fare etkileşimi (isteğe bağlı)
+      window.addEventListener('mousemove', (e) => {
+        this.mouse.x = e.x;
+        this.mouse.y = e.y;
+      });
+      window.addEventListener('mouseout', () => {
+        this.mouse.x = null;
+        this.mouse.y = null;
+      });
+
+      this.init();
+      this.animate();
+    }
+
+    resize() {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    }
+
+    init() {
+      this.particles = [];
+      for (let i = 0; i < this.numParticles; i++) {
+        const x = Math.random() * this.canvas.width;
+        const y = Math.random() * this.canvas.height;
+        this.particles.push(new Particle(x, y));
+      }
+    }
+
+    animate() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      
+      const styles = getComputedStyle(document.body);
+      const plexusColor = styles.getPropertyValue('--plexus-color').trim();
+      const plexusOpacity = styles.getPropertyValue('--plexus-opacity').trim();
+      
+      for (let i = 0; i < this.particles.length; i++) {
+        this.particles[i].update();
+        this.particles[i].draw(this.ctx, plexusColor);
+
+        for (let j = i; j < this.particles.length; j++) {
+          const dx = this.particles[i].x - this.particles[j].x;
+          const dy = this.particles[i].y - this.particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < this.connectionDist) {
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = `rgba(${plexusColor}, ${plexusOpacity * (1 - dist / this.connectionDist)})`;
+            this.ctx.lineWidth = 0.5;
+            this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+            this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+            this.ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(() => this.animate());
+    }
   }
 
-  themeWrapper.addEventListener('click', function(e) {
-      e.preventDefault();
-      if (isAnimating) return;
-      isAnimating = true;
+  class Particle {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = (Math.random() - 0.5) * 0.4;
+      this.radius = 1;
+    }
 
-      const isCurrentlyLight = body.classList.contains('light-mode');
-      const targetIsLight = !isCurrentlyLight;
+    draw(ctx, color) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color}, 0.5)`;
+      ctx.fill();
+    }
 
-      // Düşme animasyonunu başlat
-      themeWrapper.classList.add('falling');
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
 
-      // Animasyonun başlayacağı konumu hesapla (Butonun ortası)
-      const rect = themeWrapper.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
+      if (this.x < 0 || this.x > window.innerWidth) this.vx *= -1;
+      if (this.y < 0 || this.y > window.innerHeight) this.vy *= -1;
+    }
+  }
 
-      setTimeout(() => {
-          // Harita renklerine göre hedef arkaplan rengi
-          const nextBg = targetIsLight ? '#f4f6f9' : '#0f1117';
-                            
-          rippleLayer.style.left = `${centerX}px`;
-          rippleLayer.style.top = `${window.innerHeight}px`;
-          rippleLayer.style.backgroundColor = nextBg;
-          rippleLayer.style.transition = 'transform 1s ease-in-out';
-                            
-          const maxDim = Math.max(window.innerWidth, window.innerHeight);
-          const scale = (maxDim / 1) * 2.5; // Ekranı kaplaması için yeterli büyüklük
-                            
-          rippleLayer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  // Dinamik arka planı başlat
+  new PlexusEffect('plexus-bg');
 
-          setTimeout(() => {
-              if (targetIsLight) {
-                  body.classList.add('light-mode');
-                  localStorage.setItem('map-theme', 'light-mode');
-                  toggleSwitch.checked = true;
-              } else {
-                  body.classList.remove('light-mode');
-                  localStorage.setItem('map-theme', 'dark-mode');
-                  toggleSwitch.checked = false;
-              }
-
-              // Ripple katmanını gizle
-              rippleLayer.style.transition = 'opacity 0.5s ease';
-              rippleLayer.style.opacity = '0';
-
-              setTimeout(() => {
-                  rippleLayer.style.transition = 'none';
-                  rippleLayer.style.transform = 'translate(-50%, -50%) scale(0)';
-                  rippleLayer.style.opacity = '1';
-                                                                    
-                  themeWrapper.classList.remove('falling');
-                  isAnimating = false;
-              }, 500);
-
-          }, 1000);
-
-      }, 800);
-  });
+  update(); // Sayfa yüklendiğinde ilk güncelleme
 </script>
+
 </body>
 </html>
