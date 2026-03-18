@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Türkiye Gezi Haritam</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1e2235;
+    --visited: #e07a45;
+    --visited-h: #f09060;
+    --idle: #2a3050;
+    --idle-h: #3a4268;
+    --border: #ffffff15;
+    --text: #e8e8f0;
+    --muted: #8890b0;
+    --accent: #e07a45;
+    --stroke: #0a0c14;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 10% 10%, #1b2040 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 90%, #1a1528 0%, transparent 50%);
+  }
+  header { text-align:center; padding:40px 24px 16px; }
+  header h1 {
+    font-family:'Playfair Display',serif;
+    font-size: clamp(1.7rem,5vw,2.7rem);
+    background: linear-gradient(135deg,#f0c090,#e07a45,#c85070);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text; margin-bottom:5px;
+  }
+  header p { color:var(--muted); font-size:.9rem; }
+
+  .stats { display:flex; justify-content:center; gap:16px; padding:16px 24px 12px; flex-wrap:wrap; }
+  .stat {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:12px 22px; text-align:center; min-width:96px;
+  }
+  .num {
+    font-family:'Playfair Display',serif; font-size:2rem;
+    color:var(--accent); line-height:1;
+  }
+  .num.bump { animation:bump .3s ease; }
+  @keyframes bump { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+  .lbl2 { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:1.3px; margin-top:2px; }
+
+  .prog-wrap { max-width:520px; margin:0 auto 6px; padding:0 24px; }
+  .prog-track { background:var(--card); border-radius:99px; height:6px; overflow:hidden; border:1px solid var(--border); }
+  .prog-fill {
+    height:100%; background:linear-gradient(90deg,#e07a45,#b84060);
+    border-radius:99px; transition:width .5s cubic-bezier(.34,1.56,.64,1); width:0%;
+  }
+  .prog-lbl { text-align:right; font-size:.68rem; color:var(--muted); margin-top:3px; }
+
+  .map-wrap { padding:14px 12px 4px; max-width:1100px; margin:0 auto; }
+  #map { width:100%; height:auto; filter:drop-shadow(0 8px 36px #00000099); }
+
+  .p {
+    fill:var(--idle); stroke:var(--stroke); stroke-width:.7;
+    cursor:pointer; transition:fill .15s ease;
+  }
+  .p:hover { fill:var(--idle-h); }
+  .p.v { fill:var(--visited); }
+  .p.v:hover { fill:var(--visited-h); }
+
+  .lbl {
+    font-family:'Nunito',sans-serif; font-size:7px; font-weight:700;
+    fill:#ffffff55; text-anchor:middle; dominant-baseline:middle;
+    pointer-events:none; user-select:none;
+  }
+
+  #tt {
+    position:fixed; background:var(--card); border:1px solid var(--border);
+    border-radius:9px; padding:7px 13px; font-size:.84rem; font-weight:600;
+    pointer-events:none; opacity:0; transition:opacity .1s; z-index:999;
+    box-shadow:0 6px 24px #00000077;
+  }
+  #tt.on { opacity:1; }
+  .ts { font-size:.69rem; font-weight:400; color:var(--muted); margin-top:1px; }
+  .ts.v { color:var(--accent); }
+
+  .section { max-width:1100px; margin:0 auto 52px; padding:0 20px; }
+  .section h2 {
+    font-family:'Playfair Display',serif; font-size:1.2rem;
+    display:flex; align-items:center; gap:10px; margin-bottom:13px;
+  }
+  .section h2::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .chips { display:flex; flex-wrap:wrap; gap:7px; min-height:36px; }
+  .chip {
+    background:var(--visited); color:#fff; border-radius:99px;
+    padding:4px 13px; font-size:.78rem; font-weight:700; cursor:pointer;
+    transition:background .15s, transform .1s;
+    animation:pop .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  .chip:hover { background:var(--visited-h); transform:scale(1.07); }
+  @keyframes pop { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+  .empty { color:var(--muted); font-size:.85rem; font-style:italic; }
+
+  .reset {
+    display:block; margin:16px auto 0;
+    background:transparent; border:1px solid var(--border);
+    color:var(--muted); padding:8px 20px; border-radius:99px;
+    font-family:'Nunito',sans-serif; font-size:.8rem; cursor:pointer;
+    transition:all .2s;
+  }
+  .reset:hover { border-color:var(--accent); color:var(--accent); }
+  @media(max-width:480px){
+    .stats{gap:8px} .stat{padding:10px 14px} .num{font-size:1.65rem}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🗺️ Türkiye Gezi Haritam</h1>
+  <p>Gezdiğin ile tıkla &middot; Tekrar tıkla ile işareti kaldır</p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="cnt">0</div><div class="lbl2">Gezilen İl</div></div>
+  <div class="stat"><div class="num" id="rem">81</div><div class="lbl2">Kalan İl</div></div>
+  <div class="stat"><div class="num" id="pct">%0</div><div class="lbl2">Türkiye'nin</div></div>
+</div>
+
+<div class="prog-wrap">
+  <div class="prog-track"><div class="prog-fill" id="bar"></div></div>
+  <div class="prog-lbl" id="blbl">0 / 81 il gezildi</div>
+</div>
+
+<div class="map-wrap">
+<svg id="map" viewBox="0 0 1020 510" xmlns="http://www.w3.org/2000/svg">
+<g id="prov">
+<polygon class="p" data-city="Adana" points="504.9,376.8 545.4,362.1 580.7,376.8 611.0,369.5 626.2,391.6 595.9,413.8 575.7,428.5 535.3,435.9 510.0,428.5 489.8,413.8 479.7,399.0 494.8,384.2"/>
+<polygon class="p" data-city="Adıyaman" points="611.0,347.3 646.4,332.5 676.7,339.9 691.8,354.7 666.6,376.8 626.2,376.8 600.9,369.5"/>
+<polygon class="p" data-city="Afyon" points="222.1,273.5 257.4,258.7 292.8,251.3 308.0,273.5 297.9,295.6 272.6,317.8 242.3,325.2 212.0,310.4 206.9,288.2"/>
+<polygon class="p" data-city="Ağrı" points="863.6,221.8 914.1,207.0 949.4,192.2 979.7,199.6 964.6,229.2 949.4,251.3 914.1,258.7 878.7,251.3 853.5,236.5"/>
+<polygon class="p" data-city="Aksaray" points="393.8,303.0 424.1,288.2 444.3,295.6 454.4,317.8 434.2,339.9 409.0,347.3 383.7,332.5 373.6,317.8"/>
+<polygon class="p" data-city="Amasya" points="494.8,133.2 525.2,118.4 560.5,111.0 575.7,133.2 560.5,155.3 535.3,162.7 510.0,155.3 489.8,147.9"/>
+<polygon class="p" data-city="Ankara" points="272.6,236.5 308.0,214.4 343.3,177.5 373.6,170.1 393.8,184.8 383.7,214.4 363.5,236.5 333.2,258.7 292.8,266.1 272.6,258.7"/>
+<polygon class="p" data-city="Antalya" points="181.7,384.2 222.1,369.5 257.4,362.1 292.8,376.8 333.2,391.6 358.5,413.8 343.3,450.7 282.7,465.5 222.1,472.8 181.7,450.7 166.5,421.2 176.6,399.0"/>
+<polygon class="p" data-city="Ardahan" points="848.4,111.0 878.7,88.8 914.1,81.5 929.2,103.6 914.1,125.8 878.7,140.5 848.4,125.8"/>
+<polygon class="p" data-city="Artvin" points="797.9,111.0 828.2,88.8 863.6,81.5 878.7,103.6 863.6,133.2 828.2,147.9 797.9,133.2"/>
+<polygon class="p" data-city="Aydın" points="90.8,332.5 121.1,317.8 156.4,325.2 171.6,347.3 156.4,376.8 131.2,391.6 100.9,391.6 80.7,369.5 80.7,347.3"/>
+<polygon class="p" data-city="Balıkesir" points="55.4,214.4 90.8,184.8 121.1,170.1 151.4,184.8 171.6,207.0 156.4,236.5 131.2,258.7 100.9,266.1 70.6,251.3 50.4,236.5"/>
+<polygon class="p" data-city="Bartın" points="333.2,66.7 358.5,51.9 383.7,59.3 393.8,81.5 373.6,96.2 348.4,96.2 333.2,81.5"/>
+<polygon class="p" data-city="Batman" points="777.7,347.3 813.1,332.5 838.3,347.3 848.4,369.5 828.2,391.6 787.8,391.6 767.6,376.8 772.7,362.1"/>
+<polygon class="p" data-city="Bayburt" points="727.2,170.1 752.4,155.3 777.7,162.7 787.8,184.8 767.6,207.0 737.3,207.0 722.1,192.2"/>
+<polygon class="p" data-city="Bilecik" points="222.1,177.5 247.3,162.7 262.5,177.5 262.5,199.6 242.3,207.0 222.1,199.6 217.0,184.8"/>
+<polygon class="p" data-city="Bingöl" points="757.5,273.5 787.8,251.3 818.1,251.3 838.3,273.5 823.2,295.6 787.8,310.4 762.6,303.0 752.4,288.2"/>
+<polygon class="p" data-city="Bitlis" points="838.3,303.0 868.6,288.2 898.9,295.6 909.0,317.8 888.8,339.9 858.5,347.3 838.3,332.5 828.2,317.8"/>
+<polygon class="p" data-city="Bolu" points="292.8,133.2 323.1,111.0 348.4,103.6 373.6,118.4 383.7,147.9 358.5,177.5 333.2,184.8 308.0,177.5 292.8,162.7"/>
+<polygon class="p" data-city="Burdur" points="222.1,354.7 252.4,332.5 282.7,332.5 297.9,354.7 282.7,384.2 252.4,391.6 222.1,384.2 212.0,369.5"/>
+<polygon class="p" data-city="Bursa" points="156.4,155.3 181.7,140.5 212.0,147.9 232.2,170.1 242.3,184.8 222.1,207.0 191.8,214.4 161.5,199.6 146.3,184.8 151.4,170.1"/>
+<polygon class="p" data-city="Çanakkale" points="30.2,170.1 55.4,147.9 80.7,147.9 100.9,170.1 100.9,192.2 80.7,207.0 55.4,207.0 30.2,192.2 20.1,184.8"/>
+<polygon class="p" data-city="Çankırı" points="358.5,140.5 383.7,118.4 409.0,111.0 424.1,133.2 424.1,162.7 398.9,184.8 373.6,184.8 358.5,170.1"/>
+<polygon class="p" data-city="Çorum" points="424.1,140.5 454.4,125.8 484.7,111.0 504.9,125.8 515.1,147.9 494.8,170.1 464.5,177.5 434.2,170.1 419.1,155.3"/>
+<polygon class="p" data-city="Denizli" points="156.4,339.9 181.7,317.8 212.0,317.8 232.2,339.9 222.1,369.5 191.8,384.2 166.5,384.2 151.4,369.5 151.4,354.7"/>
+<polygon class="p" data-city="Diyarbakır" points="696.9,339.9 727.2,317.8 762.6,317.8 787.8,332.5 787.8,362.1 762.6,384.2 727.2,391.6 696.9,384.2 676.7,369.5 676.7,354.7"/>
+<polygon class="p" data-city="Düzce" points="272.6,111.0 292.8,96.2 313.0,96.2 323.1,118.4 313.0,133.2 292.8,140.5 272.6,133.2 267.6,125.8"/>
+<polygon class="p" data-city="Edirne" points="35.2,44.5 65.5,44.5 80.7,59.3 95.8,74.1 85.7,96.2 60.5,111.0 30.2,111.0 15.0,96.2 20.1,66.7"/>
+<polygon class="p" data-city="Elazığ" points="651.4,273.5 676.7,251.3 707.0,243.9 727.2,266.1 722.1,295.6 696.9,317.8 661.5,317.8 646.4,303.0 646.4,288.2"/>
+<polygon class="p" data-city="Erzincan" points="636.3,221.8 661.5,199.6 696.9,184.8 727.2,199.6 747.4,221.8 737.3,243.9 707.0,266.1 676.7,273.5 646.4,258.7 636.3,243.9"/>
+<polygon class="p" data-city="Erzurum" points="747.4,207.0 787.8,184.8 828.2,170.1 863.6,177.5 878.7,199.6 863.6,229.2 838.3,251.3 797.9,258.7 762.6,251.3 737.3,236.5 737.3,221.8"/>
+<polygon class="p" data-city="Eskişehir" points="242.3,192.2 272.6,170.1 302.9,162.7 323.1,184.8 313.0,214.4 282.7,229.2 257.4,229.2 232.2,214.4 232.2,199.6"/>
+<polygon class="p" data-city="Gaziantep" points="560.5,391.6 595.9,369.5 626.2,376.8 646.4,399.0 631.2,421.2 595.9,428.5 565.6,428.5 550.4,413.8 555.5,399.0"/>
+<polygon class="p" data-city="Giresun" points="636.3,140.5 666.6,125.8 701.9,111.0 727.2,125.8 737.3,147.9 717.1,170.1 686.8,177.5 656.5,170.1 636.3,155.3"/>
+<polygon class="p" data-city="Gümüşhane" points="686.8,162.7 712.0,147.9 737.3,147.9 757.5,170.1 747.4,192.2 717.1,207.0 686.8,199.6 676.7,184.8 676.7,170.1"/>
+<polygon class="p" data-city="Hakkari" points="909.0,362.1 939.3,347.3 979.7,362.1 979.7,391.6 949.4,413.8 919.1,413.8 898.9,399.0 898.9,376.8"/>
+<polygon class="p" data-city="Hatay" points="525.2,413.8 555.5,391.6 580.7,406.4 595.9,435.9 575.7,465.5 545.4,480.2 520.1,472.8 504.9,450.7 510.0,428.5 520.1,413.8"/>
+<polygon class="p" data-city="Iğdır" points="929.2,199.6 964.6,184.8 989.8,192.2 994.9,214.4 974.7,229.2 949.4,236.5 929.2,221.8"/>
+<polygon class="p" data-city="Isparta" points="252.4,325.2 282.7,303.0 308.0,310.4 318.1,332.5 302.9,362.1 272.6,369.5 247.3,362.1 232.2,347.3 237.2,332.5"/>
+<polygon class="p" data-city="İstanbul" points="131.2,111.0 156.4,88.8 181.7,81.5 206.9,96.2 222.1,111.0 206.9,125.8 181.7,125.8 156.4,125.8 131.2,118.4"/>
+<polygon class="p" data-city="İzmir" points="40.3,295.6 70.6,273.5 90.8,266.1 111.0,288.2 121.1,317.8 105.9,339.9 80.7,354.7 50.4,354.7 30.2,332.5 30.2,310.4"/>
+<polygon class="p" data-city="Kahramanmaraş" points="565.6,362.1 595.9,347.3 626.2,347.3 646.4,369.5 626.2,391.6 595.9,399.0 575.7,391.6 560.5,376.8"/>
+<polygon class="p" data-city="Karabük" points="348.4,96.2 373.6,74.1 398.9,74.1 414.0,96.2 403.9,118.4 378.7,125.8 353.4,118.4 343.3,111.0"/>
+<polygon class="p" data-city="Karaman" points="358.5,384.2 393.8,362.1 424.1,362.1 444.3,384.2 434.2,413.8 398.9,428.5 363.5,421.2 343.3,406.4 348.4,391.6"/>
+<polygon class="p" data-city="Kars" points="863.6,147.9 898.9,125.8 939.3,118.4 964.6,140.5 954.5,170.1 919.1,184.8 878.7,184.8 853.5,170.1 853.5,155.3"/>
+<polygon class="p" data-city="Kastamonu" points="373.6,74.1 403.9,51.9 434.2,37.2 464.5,51.9 484.7,66.7 474.6,96.2 444.3,111.0 414.0,111.0 383.7,96.2 373.6,88.8"/>
+<polygon class="p" data-city="Kayseri" points="484.7,251.3 515.1,229.2 545.4,221.8 575.7,243.9 585.8,273.5 565.6,295.6 535.3,310.4 504.9,303.0 484.7,280.8 484.7,258.7"/>
+<polygon class="p" data-city="Kilis" points="565.6,428.5 595.9,413.8 616.1,428.5 621.1,443.3 595.9,458.1 565.6,450.7 555.5,443.3"/>
+<polygon class="p" data-city="Kırıkkale" points="383.7,199.6 403.9,177.5 424.1,170.1 444.3,184.8 444.3,214.4 424.1,229.2 398.9,229.2 383.7,221.8"/>
+<polygon class="p" data-city="Kırklareli" points="65.5,44.5 95.8,44.5 121.1,59.3 121.1,81.5 100.9,96.2 80.7,96.2 70.6,81.5 65.5,59.3"/>
+<polygon class="p" data-city="Kırşehir" points="403.9,251.3 434.2,229.2 454.4,229.2 464.5,251.3 454.4,273.5 424.1,288.2 403.9,280.8 393.8,266.1"/>
+<polygon class="p" data-city="Kocaeli" points="206.9,118.4 232.2,103.6 262.5,103.6 272.6,125.8 257.4,140.5 232.2,140.5 212.0,133.2 206.9,125.8"/>
+<polygon class="p" data-city="Konya" points="308.0,317.8 343.3,295.6 373.6,280.8 409.0,295.6 424.1,317.8 409.0,347.3 383.7,369.5 333.2,369.5 302.9,347.3 292.8,332.5 302.9,317.8"/>
+<polygon class="p" data-city="Kütahya" points="191.8,221.8 222.1,199.6 252.4,192.2 272.6,207.0 272.6,236.5 252.4,258.7 222.1,266.1 191.8,258.7 181.7,243.9 186.7,229.2"/>
+<polygon class="p" data-city="Malatya" points="626.2,288.2 656.5,266.1 686.8,258.7 712.0,273.5 712.0,303.0 686.8,325.2 656.5,332.5 626.2,325.2 611.0,310.4 616.1,295.6"/>
+<polygon class="p" data-city="Manisa" points="80.7,258.7 111.0,236.5 141.3,229.2 161.5,243.9 171.6,266.1 156.4,295.6 131.2,303.0 100.9,295.6 80.7,280.8 80.7,266.1"/>
+<polygon class="p" data-city="Mardin" points="762.6,391.6 797.9,369.5 828.2,369.5 863.6,376.8 878.7,399.0 858.5,421.2 828.2,428.5 787.8,428.5 762.6,413.8 752.4,399.0"/>
+<polygon class="p" data-city="Mersin" points="358.5,384.2 383.7,369.5 424.1,362.1 454.4,369.5 484.7,384.2 504.9,406.4 484.7,443.3 434.2,465.5 383.7,465.5 343.3,450.7 333.2,421.2 343.3,399.0"/>
+<polygon class="p" data-city="Muğla" points="95.8,384.2 121.1,369.5 151.4,376.8 181.7,384.2 191.8,406.4 171.6,428.5 141.3,443.3 100.9,435.9 80.7,413.8 85.7,399.0"/>
+<polygon class="p" data-city="Muş" points="813.1,266.1 838.3,243.9 868.6,236.5 888.8,251.3 888.8,280.8 863.6,303.0 838.3,310.4 813.1,295.6 808.0,280.8"/>
+<polygon class="p" data-city="Nevşehir" points="454.4,280.8 484.7,258.7 510.0,258.7 525.2,280.8 515.1,303.0 484.7,317.8 459.5,317.8 444.3,303.0 449.4,288.2"/>
+<polygon class="p" data-city="Niğde" points="434.2,339.9 464.5,317.8 494.8,317.8 510.0,339.9 499.9,362.1 469.6,376.8 439.3,369.5 424.1,354.7"/>
+<polygon class="p" data-city="Ordu" points="606.0,140.5 636.3,125.8 666.6,111.0 696.9,125.8 707.0,147.9 686.8,162.7 656.5,170.1 626.2,170.1 606.0,155.3"/>
+<polygon class="p" data-city="Osmaniye" points="535.3,384.2 565.6,369.5 590.8,376.8 606.0,399.0 585.8,421.2 555.5,428.5 535.3,413.8 530.2,399.0"/>
+<polygon class="p" data-city="Rize" points="757.5,125.8 787.8,103.6 818.1,96.2 838.3,111.0 828.2,133.2 797.9,147.9 767.6,147.9 752.4,133.2"/>
+<polygon class="p" data-city="Sakarya" points="242.3,140.5 262.5,118.4 282.7,111.0 292.8,133.2 282.7,147.9 262.5,155.3 242.3,147.9"/>
+<polygon class="p" data-city="Samsun" points="510.0,111.0 545.4,88.8 585.8,74.1 616.1,88.8 626.2,118.4 606.0,140.5 575.7,155.3 535.3,155.3 504.9,147.9 494.8,133.2 504.9,111.0"/>
+<polygon class="p" data-city="Siirt" points="828.2,347.3 858.5,332.5 888.8,339.9 904.0,362.1 888.8,384.2 858.5,391.6 828.2,384.2 813.1,369.5 818.1,354.7"/>
+<polygon class="p" data-city="Sinop" points="434.2,51.9 464.5,29.8 494.8,29.8 515.1,51.9 525.2,74.1 504.9,96.2 474.6,103.6 444.3,96.2 424.1,81.5 429.2,66.7"/>
+<polygon class="p" data-city="Sivas" points="535.3,199.6 565.6,177.5 595.9,162.7 626.2,170.1 646.4,192.2 646.4,221.8 626.2,251.3 595.9,273.5 565.6,266.1 535.3,243.9 525.2,221.8 535.3,199.6"/>
+<polygon class="p" data-city="Şanlıurfa" points="626.2,362.1 656.5,339.9 686.8,332.5 717.1,347.3 737.3,369.5 727.2,391.6 696.9,413.8 656.5,421.2 616.1,413.8 595.9,399.0 606.0,376.8"/>
+<polygon class="p" data-city="Şırnak" points="848.4,376.8 878.7,362.1 909.0,369.5 919.1,391.6 909.0,413.8 878.7,428.5 848.4,421.2 838.3,406.4 838.3,391.6"/>
+<polygon class="p" data-city="Tekirdağ" points="55.4,111.0 80.7,96.2 105.9,103.6 121.1,118.4 105.9,140.5 80.7,147.9 55.4,140.5 35.2,125.8 45.3,111.0"/>
+<polygon class="p" data-city="Tokat" points="525.2,162.7 555.5,147.9 585.8,140.5 611.0,155.3 626.2,184.8 611.0,207.0 575.7,214.4 545.4,214.4 525.2,199.6 520.1,184.8 525.2,162.7"/>
+<polygon class="p" data-city="Trabzon" points="707.0,133.2 737.3,111.0 767.6,96.2 797.9,111.0 808.0,133.2 787.8,155.3 757.5,162.7 727.2,162.7 707.0,147.9"/>
+<polygon class="p" data-city="Tunceli" points="676.7,251.3 707.0,229.2 737.3,221.8 757.5,243.9 747.4,266.1 717.1,280.8 686.8,280.8 671.6,266.1"/>
+<polygon class="p" data-city="Uşak" points="161.5,273.5 191.8,251.3 212.0,258.7 222.1,280.8 206.9,303.0 181.7,310.4 161.5,303.0 151.4,288.2"/>
+<polygon class="p" data-city="Van" points="898.9,288.2 939.3,266.1 969.6,266.1 989.8,288.2 989.8,317.8 969.6,339.9 939.3,347.3 909.0,339.9 888.8,325.2 888.8,303.0"/>
+<polygon class="p" data-city="Yalova" points="186.7,125.8 206.9,111.0 227.1,111.0 232.2,125.8 217.0,140.5 191.8,140.5"/>
+<polygon class="p" data-city="Yozgat" points="459.5,199.6 494.8,170.1 525.2,170.1 545.4,184.8 545.4,214.4 525.2,243.9 494.8,258.7 464.5,258.7 444.3,236.5 444.3,214.4 459.5,199.6"/>
+<polygon class="p" data-city="Zonguldak" points="282.7,81.5 308.0,59.3 333.2,59.3 348.4,81.5 333.2,103.6 308.0,111.0 282.7,103.6 272.6,88.8"/>
+</g>
+<g id="lbls">
+<text x="545.8" y="398.4" class="lbl">Adana</text>
+<text x="645.7" y="356.8" class="lbl">Adı</text>
+<text x="256.9" y="288.2" class="lbl">Afyon</text>
+<text x="918.6" y="227.5" class="lbl">Ağrı</text>
+<text x="414.7" y="317.8" class="lbl">Aks</text>
+<text x="531.5" y="139.6" class="lbl">Amasya</text>
+<text x="333.7" y="221.8" class="lbl">Ankara</text>
+<text x="251.6" y="413.2" class="lbl">Ant</text>
+<text x="887.4" y="111.0" class="lbl">Ard</text>
+<text x="836.9" y="114.2" class="lbl">Artvin</text>
+<text x="121.1" y="355.5" class="lbl">Aydın</text>
+<text x="110.0" y="221.0" class="lbl">Bal</text>
+<text x="360.6" y="76.2" class="lbl">Bartın</text>
+<text x="804.2" y="364.8" class="lbl">Batman</text>
+<text x="753.2" y="182.7" class="lbl">Bay</text>
+<text x="239.4" y="187.0" class="lbl">Bil</text>
+<text x="791.0" y="280.8" class="lbl">Bingöl</text>
+<text x="866.1" y="317.8" class="lbl">Bitlis</text>
+<text x="334.9" y="146.3" class="lbl">Bolu</text>
+<text x="253.0" y="363.0" class="lbl">Burdur</text>
+<text x="189.8" y="177.5" class="lbl">Bursa</text>
+<text x="61.6" y="179.9" class="lbl">Çan</text>
+<text x="391.3" y="150.7" class="lbl">Çan</text>
+<text x="466.2" y="147.1" class="lbl">Çorum</text>
+<text x="185.1" y="353.1" class="lbl">Den</text>
+<text x="730.2" y="355.4" class="lbl">Diy</text>
+<text x="293.4" y="119.3" class="lbl">Düzce</text>
+<text x="54.3" y="78.2" class="lbl">Edirne</text>
+<text x="681.7" y="284.1" class="lbl">Elazığ</text>
+<text x="687.3" y="231.4" class="lbl">Erz</text>
+<text x="803.9" y="217.1" class="lbl">Erz</text>
+<text x="273.2" y="199.6" class="lbl">Esk</text>
+<text x="591.9" y="403.1" class="lbl">Gaz</text>
+<text x="685.1" y="147.1" class="lbl">Gir</text>
+<text x="710.9" y="175.8" class="lbl">Güm</text>
+<text x="934.3" y="383.3" class="lbl">Hak</text>
+<text x="543.3" y="435.9" class="lbl">Hatay</text>
+<text x="961.7" y="211.2" class="lbl">Iğdır</text>
+<text x="272.6" y="338.3" class="lbl">Isp</text>
+<text x="174.9" y="109.4" class="lbl">İst</text>
+<text x="73.1" y="313.3" class="lbl">İzmir</text>
+<text x="599.0" y="373.2" class="lbl">Kah</text>
+<text x="376.8" y="101.8" class="lbl">Kar</text>
+<text x="389.9" y="394.9" class="lbl">Kar</text>
+<text x="902.9" y="155.3" class="lbl">Kars</text>
+<text x="425.1" y="78.5" class="lbl">Kas</text>
+<text x="528.2" y="266.8" class="lbl">Kay</text>
+<text x="587.9" y="438.0" class="lbl">Kilis</text>
+<text x="413.4" y="203.3" class="lbl">Kır</text>
+<text x="90.1" y="70.4" class="lbl">Kır</text>
+<text x="429.2" y="258.7" class="lbl">Kır</text>
+<text x="235.4" y="123.9" class="lbl">Koc</text>
+<text x="353.0" y="326.5" class="lbl">Konya</text>
+<text x="224.6" y="231.4" class="lbl">Küt</text>
+<text x="659.0" y="297.8" class="lbl">Mal</text>
+<text x="121.6" y="267.6" class="lbl">Manisa</text>
+<text x="812.1" y="399.7" class="lbl">Mardin</text>
+<text x="411.1" y="410.1" class="lbl">Mersin</text>
+<text x="132.2" y="404.2" class="lbl">Muğla</text>
+<text x="846.7" y="274.3" class="lbl">Muş</text>
+<text x="480.8" y="289.9" class="lbl">Nev</text>
+<text x="467.1" y="347.3" class="lbl">Niğde</text>
+<text x="654.2" y="145.5" class="lbl">Ordu</text>
+<text x="563.0" y="399.0" class="lbl">Osm</text>
+<text x="793.5" y="124.8" class="lbl">Rize</text>
+<text x="266.8" y="136.3" class="lbl">Sak</text>
+<text x="555.0" y="120.4" class="lbl">Samsun</text>
+<text x="854.0" y="362.9" class="lbl">Siirt</text>
+<text x="471.1" y="68.2" class="lbl">Sinop</text>
+<text x="583.2" y="215.0" class="lbl">Sivas</text>
+<text x="665.7" y="378.9" class="lbl">Şan</text>
+<text x="874.2" y="395.7" class="lbl">Şırnak</text>
+<text x="76.2" y="121.7" class="lbl">Tek</text>
+<text x="564.2" y="179.5" class="lbl">Tokat</text>
+<text x="755.3" y="134.8" class="lbl">Tra</text>
+<text x="712.7" y="255.0" class="lbl">Tun</text>
+<text x="186.1" y="283.6" class="lbl">Uşak</text>
+<text x="938.3" y="308.2" class="lbl">Van</text>
+<text x="210.3" y="125.8" class="lbl">Yalova</text>
+<text x="491.2" y="213.7" class="lbl">Yozgat</text>
+<text x="308.6" y="86.1" class="lbl">Zon</text>
+</g>
+</svg>
+</div>
+
+<div class="section">
+  <h2>Gezilen Şehirler</h2>
+  <div class="chips" id="chips">
+    <span class="empty">Henüz hiç şehir seçilmedi — haritadan bir ile tıkla!</span>
+  </div>
+  <button class="reset" id="rst">🗑 Tümünü Sıfırla</button>
+</div>
+
+<div id="tt">
+  <div id="tc"></div>
+  <div class="ts" id="ts"></div>
+</div>
+
+<script>
+  const TOTAL=81, KEY='tr-gezildi-v2';
+  let vis=new Set(JSON.parse(localStorage.getItem(KEY)||'[]'));
+
+  const tt=document.getElementById('tt'),tc=document.getElementById('tc'),ts=document.getElementById('ts');
+  const chips=document.getElementById('chips');
+  const cntEl=document.getElementById('cnt'),remEl=document.getElementById('rem'),
+        pctEl=document.getElementById('pct'),bar=document.getElementById('bar'),
+        blbl=document.getElementById('blbl');
+
+  function save(){ localStorage.setItem(KEY,JSON.stringify([...vis])); }
+  function bumpEl(el){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+
+  function render(){
+    const n=vis.size;
+    cntEl.textContent=n; remEl.textContent=TOTAL-n;
+    pctEl.textContent='%'+Math.round(n/TOTAL*100);
+    bar.style.width=(n/TOTAL*100)+'%';
+    blbl.textContent=n+' / '+TOTAL+' il gezildi';
+    [cntEl,remEl,pctEl].forEach(bumpEl);
+    chips.innerHTML='';
+    if(!vis.size){
+      chips.innerHTML='<span class="empty">Henüz hiç şehir seçilmedi — haritadan bir ile tıkla!</span>';
+      return;
+    }
+    [...vis].sort().forEach(city=>{
+      const c=document.createElement('span');
+      c.className='chip'; c.textContent=city; c.title='Kaldırmak için tıkla';
+      c.onclick=()=>{
+        vis.delete(city); save();
+        document.querySelectorAll('.p').forEach(p=>{ if(p.dataset.city===city) p.classList.remove('v'); });
+        render();
+      };
+      chips.appendChild(c);
+    });
+  }
+
+  document.querySelectorAll('.p').forEach(p=>{
+    const city=p.dataset.city;
+    if(vis.has(city)) p.classList.add('v');
+    p.addEventListener('click',()=>{
+      if(vis.has(city)){ vis.delete(city); p.classList.remove('v'); }
+      else{ vis.add(city); p.classList.add('v'); }
+      save(); render();
+    });
+    p.addEventListener('mousemove',e=>{
+      const v=vis.has(city);
+      tc.textContent=city;
+      ts.textContent=v?'✓ Gezildi':'Tıkla ve işaretle';
+      ts.className='ts'+(v?' v':'');
+      tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY-10)+'px';
+      tt.classList.add('on');
+    });
+    p.addEventListener('mouseleave',()=>tt.classList.remove('on'));
+  });
+
+  document.getElementById('rst').onclick=()=>{
+    if(!confirm('Tüm işaretlemeler silinsin mi?')) return;
+    vis.clear(); save();
+    document.querySelectorAll('.p').forEach(p=>p.classList.remove('v'));
+    render();
+  };
+
+  render();
+</script>
+</body>
+</html>
